@@ -27,8 +27,10 @@ services:
     ports:
       - 3000:3000
     labels:
-      - "traefik.backend=rocketchat"
-      - "traefik.frontend.rule=Host: your.domain.tld"
+      - "traefik.enable=true"
+      - "traefik.http.routers.rocketchat.rule=Host(`chat.pvharmo.ca`)"
+      - "traefik.http.routers.rocketchat.entrypoints=websecure"
+      - "traefik.http.routers.rocketchat.tls.certresolver=myresolver"
 
   mongo:
     image: mongo:4.0
