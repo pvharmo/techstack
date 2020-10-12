@@ -16,7 +16,7 @@ services:
       - ./uploads:/app/uploads
     environment:
       - PORT=3000
-      - ROOT_URL=http://chat.pvharmo.ca:3000
+      - ROOT_URL=http://chat.pvharmo.ca
       - MONGO_URL=mongodb://mongo:27017/rocketchat
       - MONGO_OPLOG_URL=mongodb://mongo:27017/local
       - MAIL_URL=smtp://smtp.email
@@ -26,11 +26,16 @@ services:
       - mongo
     ports:
       - 3000:3000
+    networks:
+      - traefik_gateway
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rocketchat.rule=Host(`chat.pvharmo.ca`)"
-      - "traefik.http.routers.rocketchat.entrypoints=websecure"
-      - "traefik.http.routers.rocketchat.tls.certresolver=myresolver"
+      - "traefik.http.routers.rocketchat.entrypoints=web"
+      - "traefik.http.services.rocketchat.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik_gateway"
+      #- "traefik.http.routers.rocketchat.entrypoints=websecure"
+      #- "traefik.http.routers.rocketchat.tls.certresolver=myresolver"
 
   mongo:
     image: mongo:4.0
@@ -41,6 +46,8 @@ services:
     command: mongod --smallfiles --oplogSize 128 --replSet rs0 --storageEngine=mmapv1
     labels:
       - "traefik.enable=false"
+    networks:
+      - traefik_gateway
 
   # this container's job is just run the command to initialize the replica set.
   # it will run the command and remove himself (it will not stay running)
@@ -59,6 +66,8 @@ services:
         done; (exit $$s)"
     depends_on:
       - mongo
+    networks:
+      - traefik_gateway
 
   # hubot, the popular chatbot (add the bot user first and change the password before starting this image)
   # hubot:
@@ -102,3 +111,7 @@ services:
   #    - 443:443
   #  volumes:
   #    - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  traefik_gateway:
+    external: true
