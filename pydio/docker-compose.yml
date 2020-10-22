@@ -3,17 +3,29 @@ services:
   cells:
     image: pydio/cells:latest
     restart: ${RESTART}
-    ports: ["8080:8080"]
+    ports: ["8081:8081"]
+    networks:
+      - traefik_gateway
     environment:
       - CELLS_BIND=${CELLS_BIND}
       - CELLS_EXTERNAL=${CELLS_EXTERNAL}
+      - CELLS_NO_TLS=1
     volumes:
       - "cellsdir:/var/cells"
       - "data:/var/cells/data"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pydio.rule=Host(`drive.pvharmo.ca`)"
+      - "traefik.http.routers.pydio.entrypoints=websecure"
+      - "traefik.http.services.pydio.loadbalancer.server.port=8081"
+      - "traefik.docker.network=traefik_gateway"
+      - "traefik.http.routers.pydio.tls.certresolver=myresolver"
 
   db:
     image: mariadb:10.4
     restart: ${RESTART}
+    networks:
+      - traefik_gateway
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
@@ -32,3 +44,7 @@ volumes:
   data: {}
   cellsdir: {}
   mysqldir: {}
+
+networks:
+  traefik_gateway:
+     external: true
